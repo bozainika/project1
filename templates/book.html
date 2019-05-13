@@ -1,0 +1,9 @@
+{% extends 'loggedin.html' %}
+{% block title %} Book list {% endblock %}
+{% block container%}
+  <ul class="list-group">
+	{% for book in books %}
+		<li class="list-group-item"><h5><a href="{{url_for('details',isbn=book['isbn'])}}">{{book['title']}} - {{book['author']}} ({{book['year']}})</a></h5></li>
+	{% endfor %}
+  </ul>
+{% endblock %}

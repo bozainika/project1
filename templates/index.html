@@ -1,0 +1,8 @@
+{% extends 'loggedin.html' %}
+{% block container%}
+{% if not status == None %}
+<div class="alert alert-success" role="alert">
+	{{status}}, {{user}}
+</div>
+{% endif %}
+{% endblock %}
