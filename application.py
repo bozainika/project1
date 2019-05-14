@@ -1,30 +1,45 @@
-from flask import Flask, session
+import os
+
+from flask import Flask, request, session
 from flask import render_template as rt
 from flask_session import Session
 
-import os
+from sqlalchemy import and_
+from sqlalchemy.exc import IntegrityError
 
-from database import register_user, login_user, list_books, post #, get_book 
+from Models import *
 
 #==================================================================================
+#setting up flask application
+app=Flask(__name__)
 
-app = Flask(__name__)
-
-# Check for environment variable
-if not os.getenv("DATABASE_URL"):
-	raise RuntimeError("DATABASE_URL is not set")
-
-# Configure session to use filesystem
+#configuring session variables
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 #==================================================================================
 
+#configuring database session variables
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
+
+#==================================================================================
+
+def post(var):
+	'''Get var from the POST array'''
+
+	return request.form.get(var)
+
+#==================================================================================
+
 @app.route("/")
 def index(status=None):
+	''' Displays home page if user is logged in or
+	 redirect him to the log in page '''
 	
-	if session['id'] == None:
+	if session["id"] == None:
 		return rt('lf.html', status='You must log in')
 	
 	else:
@@ -34,52 +49,73 @@ def index(status=None):
 
 @app.route("/rf")
 def rf(status= None):
+	''' Displays registration page if user is not logged in or
+	 redirect him to the home page '''
 	
-	if session['id']==None: return rt('rf.html', status=status)
+	if session["id"]==None: 
+		return rt('rf.html', status=status)
 	
-	else: return rt('index_logged.html', status=status)
-	
+	else:
+		return rt('index.html', status=status)
+
+#==================================================================================
 
 @app.route("/lf" )
 def lf(status = None):
-	return rt('lf.html', status=status)
+	''' Displays log in page if user is not logged in or redirect him to the home page '''
+
+	if session['id']==None: 
+		return rt('lf.html', status=status)
+
+	else: return rt('index.html', status=status)
 
 #==================================================================================
 
 @app.route('/reg',methods=["POST"])
 def register():
-	
-	status=register_user(post('username'), post('password'),post('confirm'), post('email'))
-	#post(var) self made function to get the value from POST[var]
-	
-	if status=='success':
-		return rt('lf.html',status=status)
-	else:
-		return rt('rf.html', status=status) 
+	''' Register user in the database and redirect him to the log in page'''
+	if post('password')==post('confirm'):
+		try:
+		    user=User(username=post('username'), passwrd=post('password'), email=post('email'))
+		    user.register();
+		except IntegrityError:
+			db.session.rollback()
+			return rt('rf.html', status='The username or email you are trying to used are not available')
+		else:
+			return rt('lf.html', status='success')
+ 
+#==================================================================================
+
+@app.route('/login',methods=['POST'])
+def login():
+	''' Log in user and redirect him to the home page, set session[id]=user.id '''
+
+	user=User.log_in(post('username'),post('password'))
+	if user != None:
+		session['id']=user.id
+		return rt('index.html', status='You logged in successfully', user=session['id'])
+	else: 
+		return rt('lf.html',status="danger")
 
 #==================================================================================
 
-@app.route('/login', methods=["POST"])
-def login(status=None):
+@app.route('/books/page<int:page>')
+def books(page):
+	''' Display 25 books on each page from a database if user is logged in '''
 
-	value=login_user(post('username'), post('password'))
-	
-	if value=='1' or value=='2' or value=='3':
-		return rt('lf.html', status='danger', err=value)
-	
-	session['id']=value['id']
-	return rt('index.html', status='You logged in successfully', user=session['id'])
-
-#==================================================================================
-
-@app.route('/books')
-def books():
-	return rt('book.html',books=list_books())
+	books=[]
+	for i in range (((page-1)*25)+1,(page*25)):
+		book=Book.get_book(i)
+		book=book.__dict__
+		books.append(book)
+	return rt('book.html', books=books, page=page)
 
 #==================================================================================
 
 @app.route('/logout')
 def logout():
+	'''Log out user by setting session[id] to be None and redirect to Log in page''' 
+
 	session['id']=None
 	return rt('lf.html',status='You logged out')
 
@@ -88,3 +124,24 @@ def logout():
 @app.route('/details/<string:isbn>')
 def details(isbn):
 	pass
+
+
+def main():
+	page = 3
+	books=[]
+	for i in range (((page-1)*25)+1,(page*25)):
+		book=Book.get_book(i)
+		book=book.__dict__
+		print(book['title'])
+		books.append(book)
+#	book=Book.get_book(3)
+#	book=book.__dict__
+#	print(book['title'])
+
+if __name__ =="__main__":
+	with app.app_context():
+		main()
+
+
+
+

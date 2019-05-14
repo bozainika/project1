@@ -6,4 +6,17 @@
 		<li class="list-group-item"><h5><a href="{{url_for('details',isbn=book['isbn'])}}">{{book['title']}} - {{book['author']}} ({{book['year']}})</a></h5></li>
 	{% endfor %}
   </ul>
+  <div class="row col-md-12 col-lg-12" style="padding: 10px;">
+  	<div class="btn-group btn-group-lg" role='group'>
+  		
+  		<a type="button" class={% if page==1 %} 
+  		"btn " {% else %}"btn btn-primary" 
+  		href="{{url_for('books',page=page-1)}}"{% endif %}>Previous</a>
+  		
+  		<a type="button" class={% if page==200 %}
+  		"btn" disabled {% else %}"btn btn-primary" 
+  		href="{{url_for('books',page=page+1)}}"{% endif %}>Next</a>
+  	
+  	</div>
+  </div>
 {% endblock %}
