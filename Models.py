@@ -1,7 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_,and_
-
-#importing libraries for hashing and password check:
 from werkzeug.security import generate_password_hash, check_password_hash 
 
 #setting database variable:
@@ -40,6 +38,9 @@ class User(db.Model):
             return None
         else:
             return user
+
+    def get_user(id_):
+        return User.query.get(id_);
 
 #===============================================================================
 

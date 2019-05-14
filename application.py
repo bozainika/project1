@@ -102,13 +102,19 @@ def login():
 @app.route('/books/page<int:page>')
 def books(page):
 	''' Display 25 books on each page from a database if user is logged in '''
-
+	if not session['id']:
+		return rt('lf.html', status='You must log in')
+	books_objects=Book.query.all()
+	last = Book.query.order_by(Book.id.desc()).first().__dict__
 	books=[]
-	for i in range (((page-1)*25)+1,(page*25)):
-		book=Book.get_book(i)
-		book=book.__dict__
-		books.append(book)
-	return rt('book.html', books=books, page=page)
+	for i in range (((page-1)*25),(page*25)):
+		try:
+			book=books_objects[i]
+			book=book.__dict__
+			books.append(book)
+		except Exception:
+			break;
+	return rt('book.html', books=books, page=page, last=last)
 
 #==================================================================================
 
@@ -127,13 +133,16 @@ def details(isbn):
 
 
 def main():
-	page = 3
-	books=[]
-	for i in range (((page-1)*25)+1,(page*25)):
-		book=Book.get_book(i)
-		book=book.__dict__
-		print(book['title'])
-		books.append(book)
+
+	book = Book.query.all()
+
+#	page = 3
+#	books=[]
+#	for i in range (((page-1)*25)+1,(page*25)):
+#		book=Book.get_book(i)
+#		book=book.__dict__
+#		print(book['title'])
+#		books.append(book)
 #	book=Book.get_book(3)
 #	book=book.__dict__
 #	print(book['title'])
