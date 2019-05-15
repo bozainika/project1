@@ -114,7 +114,27 @@ def books(page):
 			books.append(book)
 		except Exception:
 			break;
-	return rt('book.html', books=books, page=page, last=last)
+	return rt('show_books.html', books=books, page=page, last=last)
+#==================================================================================
+
+@app.route('/search',methods=['POST'])
+def search_page():
+    '''Display 25 books on each page from the search results if user is logged in'''
+    if not session['id']:
+        return rt('lf.html', status='You must log in')
+    search=str(post('search'))
+    results=Book.get_books(search)
+    books=[]
+    if results:
+        for res in results:
+            try:
+                book=res
+                book=book.__dict__
+                books.append(book)
+            except Exception:
+                break;
+        return rt('book.html', books=books)
+    else:return rt('index.html', status='No matches')
 
 #==================================================================================
 

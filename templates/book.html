@@ -1,6 +1,13 @@
 {% extends 'loggedin.html' %}
 {% block title %} Book list {% endblock %}
 {% block container%}
+<div class="col-12">
+  <div class="md-form active-cyan active-cyan-2 mb-3 col-lg-7 col col-md-10" >
+    <form method="POST" action="{{url_for('search_page')}}">
+      <input class="form-control" type="text" placeholder="Search" aria-label="Search" name="search">
+    </form>
+  </div>
+</div>
   {% if books|length==0 %}
     <h2 style="color: white;">No books on page {{page}}</h2>
   {% else %}
@@ -10,17 +17,6 @@
     {% endfor %}
   </ul>
   {% endif %}
-  <div class="row col-md-12 col-lg-12" style="padding: 10px;">
-  	<div class="btn-group btn-group-lg" role='group'>
-  		
-  		<a type="button" class={% if page==1 %} 
-  		"btn " {% else %}"btn btn-primary" 
-  		href="{{url_for('books',page=page-1)}}"{% endif %}>Previous</a>
-  		
-  		<a type="button" class={% if books|length==0 or last['id']==books[-1]['id'] %}
-  		"btn" disabled {% else %}"btn btn-primary" 
-  		href="{{url_for('books',page=page+1)}}"{% endif %}>Next</a>
-  	
-  	</div>
-  </div>
+  {% block buttons %}
+  {% endblock %}
 {% endblock %}

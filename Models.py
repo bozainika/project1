@@ -52,10 +52,13 @@ class Book(db.Model):
     year = db.Column(db.SmallInteger,nullable=False)
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
-    def get_book(id_):
-        '''Gets a particular book by ID and returns it '''
-        book=Book.query.get(id_)
-        return book
+    def get_books(keyword):
+        result=Book.query.filter(or_((Book.isbn.like("%{}%".format(keyword))),
+                                     (Book.title.like("%{}%".format(keyword))),
+                                     (Book.author.like("%{}%".format(keyword))))).all()
+
+        return result
+
 
 
 
