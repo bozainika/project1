@@ -73,16 +73,16 @@ def lf(status = None):
 
 @app.route('/reg',methods=["POST"])
 def register():
-	''' Register user in the database and redirect him to the log in page'''
-	if post('password')==post('confirm'):
-		try:
-		    user=User(username=post('username'), passwrd=post('password'), email=post('email'))
-		    user.register();
-		except IntegrityError:
-			db.session.rollback()
-			return rt('rf.html', status='The username or email you are trying to used are not available')
-		else:
-			return rt('lf.html', status='success')
+    ''' Register user in the database and redirect him to the log in page'''
+    if post('password')==post('confirm'):
+        try:
+            user=User(username=post('username'), passwrd=post('password'), email=post('email'))
+            user.register();
+        except IntegrityError:
+            db.session.rollback()
+            return rt('rf.html', status='The username or email you are trying to used are not available')
+        else:
+            return rt('lf.html', status='success')
  
 #==================================================================================
 
@@ -117,12 +117,12 @@ def books(page):
 	return rt('show_books.html', books=books, page=page, last=last)
 #==================================================================================
 
-@app.route('/search',methods=['POST'])
+@app.route('/search',methods=['GET'])
 def search_page():
     '''Display 25 books on each page from the search results if user is logged in'''
     if not session['id']:
         return rt('lf.html', status='You must log in')
-    search=str(post('search'))
+    search=str(request.args.get('search'))
     results=Book.get_books(search)
     books=[]
     if results:
@@ -148,28 +148,63 @@ def logout():
 #==================================================================================
 
 @app.route('/details/<string:isbn>')
-def details(isbn):
-	pass
+def details(isbn,status=None):
+    book=Book.get_book_by_isbn(isbn)
+    if not book:
+        return 'no such book'
+    reviews=book.book_revs
+    
+    if reviews: 
+        count_0s=0
+        avg_rate=0
+        for r in reviews:
+            if r.rate:
+                avg_rate+=float(r.rate)
+            else:
+                count_0s+=1
+        avg_rate=avg_rate/(len(book.book_revs)-count_0s)
+        avg_rate=str("%.2f"%avg_rate)
+        return rt('book_details.html',avg_rate=avg_rate, book=book, status=status)
+    else:
+        return 'no revs'
+
+#================================================================================================
+
+@app.route('/details/post', methods=['POST'])
+def post_comment(status=None):
+    
+    book=Book.get_book_by_isbn(post('isbn'))
+    review=Review(user_id=session['id'],book_id=book.id,review=post('content'), rate=post('rate'))
+    
+    if review.create_review():
+        avg_rate=0
+        count_0s=0
+        for r in book.book_revs:
+            if r.rate:
+                avg_rate+=float(r.rate)
+            else:
+                count_0s+=1
+        avg_rate=avg_rate/(len(book.book_revs)-count_0s)
+        avg_rate=str("%.2f"%avg_rate)
+        status='You created review'
+        return rt('book_details.html',avg_rate=avg_rate, book=book, status=status)
+    else:
+        avg_rate=0
+        for r in reviews:
+            if r.rate:
+                avg_rate+=float(r.rate)
+        avg_rate=avg_rate/len(reviews)
+        status='Could not create a review'
+        return rt('book_details.html',avg_rate=avg_rate, book=book, status=status)
+    
 
 
 def main():
+  
 
-	book = Book.query.all()
-
-#	page = 3
-#	books=[]
-#	for i in range (((page-1)*25)+1,(page*25)):
-#		book=Book.get_book(i)
-#		book=book.__dict__
-#		print(book['title'])
-#		books.append(book)
-#	book=Book.get_book(3)
-#	book=book.__dict__
-#	print(book['title'])
-
-if __name__ =="__main__":
-	with app.app_context():
-		main()
+    if __name__ =="__main__":
+        with app.app_context():
+            main()
 
 
 
